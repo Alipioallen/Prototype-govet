@@ -37,83 +37,78 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "paymentExample";
-    /**
-     * - Set to PayPalConfiguration.ENVIRONMENT_PRODUCTION to move real money.
-     *
-     * - Set to PayPalConfiguration.ENVIRONMENT_SANDBOX to use your test credentials
-     * from https://developer.paypal.com
-     *
-     * - Set to PayPalConfiguration.ENVIRONMENT_NO_NETWORK to kick the tires
-     * without communicating to PayPal's servers.
-     */
-    private static final String CONFIG_ENVIRONMENT = PayPalConfiguration.ENVIRONMENT_NO_NETWORK;
 
-    // note that these credentials will differ between live & sandbox environments.
-    private static final String CONFIG_CLIENT_ID = "credentials from developer.paypal.com";
+    Button payments;
+    EditText amounts;
 
-    private static final int REQUEST_CODE_PAYMENT = 1;
-    private static final int REQUEST_CODE_FUTURE_PAYMENT = 2;
-    private static final int REQUEST_CODE_PROFILE_SHARING = 3;
+    public static final String clientKey = "AfxOCHDgJp3kx4RSeJ1Rcr_3Fn3qnhebda3ZXICjOMXgwg_J9W1QktmaqtI00aUYBgJJMiWqo_WI-6ay";
+    public static final int PAYPAL_REQUEST_CODE = 123;
 
+   // Paypal Configuration Object
     private static PayPalConfiguration config = new PayPalConfiguration()
-            .environment(CONFIG_ENVIRONMENT)
-            .clientId(CONFIG_CLIENT_ID)
-            // The following are only used in PayPalFuturePaymentActivity.
-            .merchantName("Example Merchant")
-            .merchantPrivacyPolicyUri(Uri.parse("https://www.example.com/privacy"))
-            .merchantUserAgreementUri(Uri.parse("https://www.example.com/legal"));
-    //
-//    public static final String clientKey = "Enter your client id here";
-//    public static final int PAYPAL_REQUEST_CODE = 123;
-//
-//    // Paypal Configuration Object
-//    private static PayPalConfiguration config = new PayPalConfiguration()
-//            // Start with mock environment.  When ready,
-//            // switch to sandbox (ENVIRONMENT_SANDBOX)
-//            // or live (ENVIRONMENT_PRODUCTION)
-//            .environment(PayPalConfiguration.ENVIRONMENT_SANDBOX)
-//            // on below line we are passing a client id.
-//            .clientId(clientKey);
-//    private EditText amountEdt;
-//    private TextView paymentTV;
+           .environment(PayPalConfiguration.ENVIRONMENT_SANDBOX)
+           .clientId(clientKey);
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Intent intent = new Intent(this, PayPalService.class);
+
+        payments = findViewById(R.id.payments);
+        amounts = findViewById(R.id.amounts);
+
+        payments.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                getPayment();
+
+            }
+        });
+    }
+
+    private void getPayment() {
+
+        String amount = amounts.getText().toString();
+
+        PayPalPayment payment = new PayPalPayment(new BigDecimal(String.valueOf(amount)), "PHP", "Learn", PayPalPayment.PAYMENT_INTENT_SALE);
+
+        Intent intent = new Intent(this,PaymentActivity.class);
         intent.putExtra(PayPalService.EXTRA_PAYPAL_CONFIGURATION, config);
-        startService(intent);
+        intent.putExtra(PaymentActivity.EXTRA_PAYMENT,payment);
+
+        startActivityForResult(intent,PAYPAL_REQUEST_CODE);
+
     }
 
-    public void onBuyPressed(View pressed) {
-        /*
-         * PAYMENT_INTENT_SALE will cause the payment to complete immediately.
-         * Change PAYMENT_INTENT_SALE to
-         *   - PAYMENT_INTENT_AUTHORIZE to only authorize payment and capture funds later.
-         *   - PAYMENT_INTENT_ORDER to create a payment for authorization and capture
-         *     later via calls from your server.
-         *
-         * Also, to include additional payment details and an item list, see getStuffToBuy() below.
-         */
-        PayPalPayment thingToBuy = getThingToBuy(PayPalPayment.PAYMENT_INTENT_SALE);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
-        /*
-         * See getStuffToBuy(..) for examples of some available payment options.
-         */
+        if (requestCode==PAYPAL_REQUEST_CODE){
+            PaymentConfirmation configuration = data.getParcelableExtra(PaymentActivity.EXTRA_RESULT_CONFIRMATION);
 
-        Intent intent = new Intent(MainActivity.this, PaymentActivity.class);
+            if (configuration!=null){
+                try {
+                    String paymentDetails = configuration.toJSONObject().toString(4);
 
-        // send the same configuration for restart resiliency
-        intent.putExtra(PayPalService.EXTRA_PAYPAL_CONFIGURATION, config);
+                    JSONObject payObj = new JSONObject(paymentDetails);
+                } catch (JSONException e) {
+                    e.printStackTrace();
 
-        intent.putExtra(PaymentActivity.EXTRA_PAYMENT, thingToBuy);
-
-        startActivityForResult(intent, REQUEST_CODE_PAYMENT);
+                    Log.e("Error", "Something went wrong");
+                }
+            }
+        }
+        else if (requestCode==Activity.RESULT_CANCELED){
+            Log.i("Error", "Something went wrong");
+        }
+        else if (requestCode==PaymentActivity.RESULT_EXTRAS_INVALID){
+            Log.i("Payment", "Invalid Payment");
+        }
     }
 
-    private PayPalPayment getThingToBuy(String paymentIntent) {
-        return new PayPalPayment(new BigDecimal("0.01"), "USD", "sample item",
-                paymentIntent);
-    }
+
+
+
 }
