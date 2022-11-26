@@ -37,7 +37,8 @@ public class PaymentDetails extends AppCompatActivity {
         try {
             textId.setText(response.getString("id"));
             textStatus.setText(response.getString("state"));
-            textAmount.setText(response.getString(String.format("₱%s",paymentAmount)));
+            textAmount.setText("AMOUNT: $ " + paymentAmount);
+
         } catch (JSONException e) {
             e.printStackTrace();
         }

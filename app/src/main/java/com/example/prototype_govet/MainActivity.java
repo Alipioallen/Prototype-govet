@@ -1,6 +1,7 @@
 package com.example.prototype_govet;
 
 
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -41,14 +42,13 @@ public class MainActivity extends AppCompatActivity {
     public static final String clientKey = "AfxOCHDgJp3kx4RSeJ1Rcr_3Fn3qnhebda3ZXICjOMXgwg_J9W1QktmaqtI00aUYBgJJMiWqo_WI-6ay";
     public static final int PAYPAL_REQUEST_CODE = 7171;
 
-   // Paypal Configuration Object
+    // Paypal Configuration Object
     private static PayPalConfiguration config = new PayPalConfiguration()
-           .environment(PayPalConfiguration.ENVIRONMENT_SANDBOX)
-           .clientId(clientKey);
+            .environment(PayPalConfiguration.ENVIRONMENT_NO_NETWORK)
+            .clientId(clientKey);
 
     Button payments;
     EditText amounts;
-
     String amount;
 
     @Override
@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
         amount = amounts.getText().toString();
 
         PayPalPayment payment = new PayPalPayment(new BigDecimal(String.valueOf(amount)), "USD",
-                "Learn", PayPalPayment.PAYMENT_INTENT_SALE);
+                "Appointment Fee", PayPalPayment.PAYMENT_INTENT_SALE);
 
         Intent intent = new Intent(this,PaymentActivity.class);
         intent.putExtra(PayPalService.EXTRA_PAYPAL_CONFIGURATION, config);
